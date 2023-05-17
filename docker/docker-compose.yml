@@ -9,7 +9,7 @@ services:
         WEBUI_VERSION: ${WEBUI_VERSION}
     environment:
       # - CLI_ARGS=--extensions openai --n-gpu-layers 30 --listen --listen-host 0.0.0.0
-      - CLI_ARGS=--listen --listen-host 0.0.0.0
+      - CLI_ARGS=--listen --listen-host 0.0.0.0 --verbose
     env_file: .env
     ports:
       - "${HOST_PORT}:${CONTAINER_PORT}"

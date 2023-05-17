@@ -30,6 +30,9 @@ RUN . /build/venv/bin/activate && \
     export FORCE_CMAKE=1 && \
     python3 setup.py bdist_wheel -d .
 
+RUN . /build/venv/bin/activate && \
+    pip3 wheel hnswlib --wheel-dir=.
+
 ############ runtime
 FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
 
@@ -63,11 +66,15 @@ COPY extensions/elevenlabs_tts/requirements.txt /app/extensions/elevenlabs_tts/r
 COPY extensions/google_translate/requirements.txt /app/extensions/google_translate/requirements.txt
 COPY extensions/silero_tts/requirements.txt /app/extensions/silero_tts/requirements.txt
 COPY extensions/whisper_stt/requirements.txt /app/extensions/whisper_stt/requirements.txt
+COPY extensions/superbooga/requirements.txt /app/extensions/superbooga/requirements.txt
+COPY extensions/openai/requirements.txt /app/extensions/openai/requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip . /app/venv/bin/activate && cd extensions/api && pip3 install -r requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip . /app/venv/bin/activate && cd extensions/elevenlabs_tts && pip3 install -r requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip . /app/venv/bin/activate && cd extensions/google_translate && pip3 install -r requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip . /app/venv/bin/activate && cd extensions/silero_tts && pip3 install -r requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip . /app/venv/bin/activate && cd extensions/whisper_stt && pip3 install -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip . /app/venv/bin/activate && cd extensions/superbooga && pip3 install -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip . /app/venv/bin/activate && cd extensions/openai && pip3 install -r requirements.txt
 
 COPY requirements.txt /app/requirements.txt
 RUN . /app/venv/bin/activate && \
