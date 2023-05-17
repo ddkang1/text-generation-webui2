@@ -7,6 +7,9 @@ services:
         # specify which cuda version your card supports: https://developer.nvidia.com/cuda-gpus
         TORCH_CUDA_ARCH_LIST: ${TORCH_CUDA_ARCH_LIST}
         WEBUI_VERSION: ${WEBUI_VERSION}
+    environment:
+      # - CLI_ARGS=--extensions openai --n-gpu-layers 30 --listen --listen-host 0.0.0.0
+      - CLI_ARGS=--listen --listen-host 0.0.0.0
     env_file: .env
     ports:
       - "${HOST_PORT}:${CONTAINER_PORT}"
@@ -18,7 +21,7 @@ services:
       - ./characters:/app/characters
       - ./extensions:/app/extensions
       - ./loras:/app/loras
-      - ./models:/app/models
+      - ~/models:/app/models
       - ./presets:/app/presets
       - ./prompts:/app/prompts
       - ./softprompts:/app/softprompts
@@ -30,3 +33,13 @@ services:
             - driver: nvidia
               device_ids: ['0']
               capabilities: [gpu]
+
+  # chatgpt:
+  #   image: 522185657747.dkr.ecr.us-west-2.amazonaws.com/chatbot-ui
+  #   ports:
+  #     - 3000:3000
+  #   environment:
+  #     - 'OPENAI_API_KEY=sk-'
+  #     - 'OPENAI_API_HOST=http://api:${OPENEDAI_PORT}'
+
+#aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 522185657747.dkr.ecr.us-west-2.amazonaws.com

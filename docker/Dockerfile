@@ -20,6 +20,17 @@ ARG TORCH_CUDA_ARCH_LIST="3.5;5.0;6.0;6.1;7.0;7.5;8.0;8.6+PTX"
 RUN . /build/venv/bin/activate && \
     python3 setup_cuda.py bdist_wheel -d .
 
+RUN apt-get update && apt-get install -y ninja-build
+RUN git config --global url."https://github.com/".insteadOf git@github.com:
+RUN git clone --recurse-submodules -b v0.1.50 https://github.com/abetlen/llama-cpp-python /llama-cpp-python
+WORKDIR /llama-cpp-python
+RUN . /build/venv/bin/activate && \
+    pip3 install scikit-build && \
+    export CMAKE_ARGS="-DLLAMA_CUBLAS=on" && \
+    export FORCE_CMAKE=1 && \
+    python3 setup.py bdist_wheel -d .
+
+############ runtime
 FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
 
 LABEL maintainer="Your Name <your.email@example.com>"
@@ -42,9 +53,10 @@ RUN . /app/venv/bin/activate && \
     pip3 install --upgrade pip setuptools && \
     pip3 install torch torchvision torchaudio
 
-COPY --from=builder /build /app/repositories/GPTQ-for-LLaMa
+COPY --from=builder /build/*.whl /app/repositories/
+COPY --from=builder /llama-cpp-python/*.whl /app/repositories/
 RUN . /app/venv/bin/activate && \
-    pip3 install /app/repositories/GPTQ-for-LLaMa/*.whl
+    pip3 install /app/repositories/*.whl
 
 COPY extensions/api/requirements.txt /app/extensions/api/requirements.txt
 COPY extensions/elevenlabs_tts/requirements.txt /app/extensions/elevenlabs_tts/requirements.txt
