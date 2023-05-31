@@ -22,16 +22,13 @@ RUN . /build/venv/bin/activate && \
 
 RUN apt-get update && apt-get install -y ninja-build
 RUN git config --global url."https://github.com/".insteadOf git@github.com:
-RUN git clone --recurse-submodules -b v0.1.50 https://github.com/abetlen/llama-cpp-python /llama-cpp-python
+RUN git clone --recurse-submodules -b v0.1.55 https://github.com/abetlen/llama-cpp-python /llama-cpp-python
 WORKDIR /llama-cpp-python
 RUN . /build/venv/bin/activate && \
     pip3 install scikit-build && \
     export CMAKE_ARGS="-DLLAMA_CUBLAS=on" && \
     export FORCE_CMAKE=1 && \
     python3 setup.py bdist_wheel -d .
-
-RUN . /build/venv/bin/activate && \
-    pip3 wheel hnswlib --wheel-dir=.
 
 ############ runtime
 FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
@@ -56,29 +53,28 @@ RUN . /app/venv/bin/activate && \
     pip3 install --upgrade pip setuptools && \
     pip3 install torch torchvision torchaudio
 
-COPY --from=builder /build/*.whl /app/repositories/
-COPY --from=builder /llama-cpp-python/*.whl /app/repositories/
+COPY --from=builder /build /app/repositories/GPTQ-for-LLaMa
 RUN . /app/venv/bin/activate && \
-    pip3 install /app/repositories/*.whl
+    pip3 install /app/repositories/GPTQ-for-LLaMa/*.whl
+COPY --from=builder /llama-cpp-python/*.whl /app/repositories/llama-cpp-python/
 
 COPY extensions/api/requirements.txt /app/extensions/api/requirements.txt
 COPY extensions/elevenlabs_tts/requirements.txt /app/extensions/elevenlabs_tts/requirements.txt
 COPY extensions/google_translate/requirements.txt /app/extensions/google_translate/requirements.txt
 COPY extensions/silero_tts/requirements.txt /app/extensions/silero_tts/requirements.txt
 COPY extensions/whisper_stt/requirements.txt /app/extensions/whisper_stt/requirements.txt
-COPY extensions/superbooga/requirements.txt /app/extensions/superbooga/requirements.txt
-COPY extensions/openai/requirements.txt /app/extensions/openai/requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip . /app/venv/bin/activate && cd extensions/api && pip3 install -r requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip . /app/venv/bin/activate && cd extensions/elevenlabs_tts && pip3 install -r requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip . /app/venv/bin/activate && cd extensions/google_translate && pip3 install -r requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip . /app/venv/bin/activate && cd extensions/silero_tts && pip3 install -r requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip . /app/venv/bin/activate && cd extensions/whisper_stt && pip3 install -r requirements.txt
-RUN --mount=type=cache,target=/root/.cache/pip . /app/venv/bin/activate && cd extensions/superbooga && pip3 install -r requirements.txt
-RUN --mount=type=cache,target=/root/.cache/pip . /app/venv/bin/activate && cd extensions/openai && pip3 install -r requirements.txt
 
 COPY requirements.txt /app/requirements.txt
 RUN . /app/venv/bin/activate && \
     pip3 install -r requirements.txt
+
+RUN . /app/venv/bin/activate && \
+    pip3 install /app/repositories/llama-cpp-python/*.whl
 
 RUN cp /app/venv/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda118.so /app/venv/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cpu.so
 

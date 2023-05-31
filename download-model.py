@@ -98,7 +98,7 @@ def get_download_links_from_huggingface(model, branch, text_only=False):
     is_lora = False
     while True:
         url = f"{base}{page}" + (f"?cursor={cursor.decode()}" if cursor else "")
-        r = requests.get(url)
+        r = requests.get(url, timeout=10)
         r.raise_for_status()
         content = r.content
 
@@ -111,7 +111,7 @@ def get_download_links_from_huggingface(model, branch, text_only=False):
             if not is_lora and fname.endswith(('adapter_config.json', 'adapter_model.bin')):
                 is_lora = True
 
-            is_pytorch = re.match("(pytorch|adapter)_model.*\.bin", fname)
+            is_pytorch = re.match("(pytorch|adapter|gptq)_model.*\.bin", fname)
             is_safetensors = re.match(".*\.safetensors", fname)
             is_pt = re.match(".*\.pt", fname)
             is_ggml = re.match(".*ggml.*\.bin", fname)
@@ -169,7 +169,7 @@ def get_single_file(url, output_folder, start_from_scratch=False):
     output_path = output_folder / filename
     if output_path.exists() and not start_from_scratch:
         # Check if the file has already been downloaded completely
-        r = requests.get(url, stream=True)
+        r = requests.get(url, stream=True, timeout=10)
         total_size = int(r.headers.get('content-length', 0))
         if output_path.stat().st_size >= total_size:
             return
@@ -180,7 +180,7 @@ def get_single_file(url, output_folder, start_from_scratch=False):
         headers = {}
         mode = 'wb'
 
-    r = requests.get(url, stream=True, headers=headers)
+    r = requests.get(url, stream=True, headers=headers, timeout=10)
     with open(output_path, mode) as f:
         total_size = int(r.headers.get('content-length', 0))
         block_size = 1024
@@ -197,7 +197,7 @@ def start_download_threads(file_list, output_folder, start_from_scratch=False, t
 def download_model_files(model, branch, links, sha256, output_folder, start_from_scratch=False, threads=1):
     # Creating the folder and writing the metadata
     if not output_folder.exists():
-        output_folder.mkdir()
+        output_folder.mkdir(parents=True, exist_ok=True)
     with open(output_folder / 'huggingface-metadata.txt', 'w') as f:
         f.write(f'url: https://huggingface.co/{model}\n')
         f.write(f'branch: {branch}\n')
