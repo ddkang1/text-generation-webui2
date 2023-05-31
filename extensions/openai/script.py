@@ -392,10 +392,11 @@ class Handler(BaseHTTPRequestHandler):
                     print(f"Warning: truncating prompt to {new_len} characters, was {token_count} tokens. Now: {new_token_count} tokens.")
                     token_count = new_token_count
 
-            if req_params['truncation_length'] - token_count < req_params['max_new_tokens']:
-                print(f"Warning: Ignoring max_new_tokens ({req_params['max_new_tokens']}), too large for the remaining context. Remaining tokens: {req_params['truncation_length'] - token_count}")
-                req_params['max_new_tokens'] = req_params['truncation_length'] - token_count
-                print(f"Warning: Set max_new_tokens = {req_params['max_new_tokens']}")
+            print(f"token_count: {token_count}")
+            # if req_params['truncation_length'] - token_count < req_params['max_new_tokens']:
+            #     print(f"Warning: Ignoring max_new_tokens ({req_params['max_new_tokens']}), too large for the remaining context. Remaining tokens: {req_params['truncation_length'] - token_count}")
+                # req_params['max_new_tokens'] = req_params['truncation_length'] - token_count
+                # print(f"Warning: Set max_new_tokens = {req_params['max_new_tokens']}")
             
             # pass with some expected stop strings.
             # some strange cases of "##| Instruction: " sneaking through.
@@ -413,6 +414,7 @@ class Handler(BaseHTTPRequestHandler):
                     resp_list: [{
                         "index": 0,
                         "finish_reason": None,
+                        "logprobs": None,
                     }],
                 }
 
@@ -485,6 +487,7 @@ class Handler(BaseHTTPRequestHandler):
                         resp_list: [{
                             "index": 0,
                             "finish_reason": None,
+                            "logprobs": None,
                         }],
                     }
 
@@ -513,6 +516,7 @@ class Handler(BaseHTTPRequestHandler):
                     resp_list: [{
                         "index": 0,
                         "finish_reason": "stop",
+                        "logprobs": None,
                     }],
                     "usage": {
                         "prompt_tokens": token_count,
