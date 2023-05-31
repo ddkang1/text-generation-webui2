@@ -76,6 +76,9 @@ RUN . /app/venv/bin/activate && \
 RUN . /app/venv/bin/activate && \
     pip3 install /app/repositories/llama-cpp-python/*.whl
 
+RUN . /app/venv/bin/activate && \
+    pip3 install rwkv
+
 RUN cp /app/venv/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cuda118.so /app/venv/lib/python3.10/site-packages/bitsandbytes/libbitsandbytes_cpu.so
 
 COPY . /app/
