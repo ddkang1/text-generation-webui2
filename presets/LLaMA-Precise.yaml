@@ -4,3 +4,4 @@ top_k: 40
 temperature: 0.7
 repetition_penalty: 1.18
 typical_p: 1.0
+mirostat_mode: 2
