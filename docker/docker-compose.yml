@@ -33,7 +33,7 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              device_ids: ['0']
+              device_ids: ['all']
               capabilities: [gpu]
 
 # aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 522185657747.dkr.ecr.us-west-2.amazonaws.com

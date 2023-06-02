@@ -30,6 +30,12 @@ RUN . /build/venv/bin/activate && \
     export FORCE_CMAKE=1 && \
     python3 setup.py bdist_wheel -d .
 
+RUN git clone https://github.com/PanQiWei/AutoGPTQ.git /AutoGPTQ
+WORKDIR /AutoGPTQ
+RUN . /build/venv/bin/activate && \
+    python3 setup.py bdist_wheel -d . && \
+    AUTO_GPTQ=$(ls *.whl)
+
 ############ runtime
 FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
 
@@ -57,6 +63,7 @@ COPY --from=builder /build /app/repositories/GPTQ-for-LLaMa
 RUN . /app/venv/bin/activate && \
     pip3 install /app/repositories/GPTQ-for-LLaMa/*.whl
 COPY --from=builder /llama-cpp-python/*.whl /app/repositories/llama-cpp-python/
+COPY --from=builder /AutoGPTQ/$AUTO_GPTQ /app/repositories/AutoGPTQ/
 
 COPY extensions/api/requirements.txt /app/extensions/api/requirements.txt
 COPY extensions/elevenlabs_tts/requirements.txt /app/extensions/elevenlabs_tts/requirements.txt
@@ -75,6 +82,9 @@ RUN . /app/venv/bin/activate && \
 
 RUN . /app/venv/bin/activate && \
     pip3 install /app/repositories/llama-cpp-python/*.whl
+
+RUN . /app/venv/bin/activate && \
+    pip3 install /app/repositories/AutoGPTQ/$AUTO_GPTQ[triton]
 
 RUN . /app/venv/bin/activate && \
     pip3 install rwkv
