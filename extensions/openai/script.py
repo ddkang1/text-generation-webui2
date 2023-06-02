@@ -46,7 +46,7 @@ default_req_params = {
     'penalty_alpha': 0.0,
     'length_penalty': 1,
     'early_stopping': False,
-    'mirostat_mode': 0,
+    'mirostat_mode': 2,
     'mirostat_tau': 5,
     'mirostat_eta': 0.1,
     'ban_eos_token': False,
