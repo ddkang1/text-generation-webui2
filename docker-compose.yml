@@ -1,0 +1,72 @@
+version: "3.3"
+
+networks:
+  textgen-network:
+
+x-common-params: &common-params
+  image: 522185657747.dkr.ecr.us-west-2.amazonaws.com/textgen
+  build:
+    context: .
+    args:
+      TORCH_CUDA_ARCH_LIST: ${TORCH_CUDA_ARCH_LIST}
+      WEBUI_VERSION: ${WEBUI_VERSION}
+  env_file: .env
+  stdin_open: true
+  tty: true
+  volumes:
+    - ./characters:/app/characters
+    - ./extensions:/app/extensions
+    - ./loras:/app/loras
+    - ./models:/app/models
+    - ./presets:/app/presets
+    - ./prompts:/app/prompts
+    - ./softprompts:/app/softprompts
+    - ./training:/app/training
+    - /home/ec2-user:/home/ec2-user
+  networks:
+    - textgen-network
+
+# specify which cuda version your card supports: https://developer.nvidia.com/cuda-gpus
+
+services:
+  textgen-gpu0:
+    <<: *common-params
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [gpu]
+
+  textgen-gpu1:
+    <<: *common-params
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['1']
+              capabilities: [gpu]
+
+  textgen-gpu2:
+    <<: *common-params
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['2']
+              capabilities: [gpu]
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - 8080:8080
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - textgen-network
+
+# aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 522185657747.dkr.ecr.us-west-2.amazonaws.com
+# docker push 522185657747.dkr.ecr.us-west-2.amazonaws.com/textgen
