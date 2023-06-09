@@ -36,18 +36,18 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              device_ids: ['0','1','2']
+              device_ids: ['0','1','2','3']
               capabilities: [gpu]
 
-  # textgen-gpu1:
-  #   <<: *common-params
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             device_ids: ['0','1','2']
-  #             capabilities: [gpu]
+  textgen-gpu1:
+    <<: *common-params
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0','1','2','3']
+              capabilities: [gpu]
 
   # textgen-gpu2:
   #   <<: *common-params
