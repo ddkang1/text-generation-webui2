@@ -4,7 +4,7 @@ networks:
   textgen-network:
 
 x-common-params: &common-params
-  image: 522185657747.dkr.ecr.us-west-2.amazonaws.com/textgen
+  image: textgen
   build:
     context: .
     args:

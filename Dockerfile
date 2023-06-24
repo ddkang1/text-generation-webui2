@@ -22,8 +22,8 @@ RUN . /build/venv/bin/activate && \
 
 RUN apt-get update && apt-get install -y ninja-build
 RUN git config --global url."https://github.com/".insteadOf git@github.com:
-# RUN git clone --recurse-submodules -b v0.1.55 https://github.com/abetlen/llama-cpp-python /llama-cpp-python
-RUN git clone --recurse-submodules https://github.com/abetlen/llama-cpp-python /llama-cpp-python
+RUN git clone --recurse-submodules -b v0.1.63 https://github.com/abetlen/llama-cpp-python /llama-cpp-python
+# RUN git clone --recurse-submodules https://github.com/abetlen/llama-cpp-python /llama-cpp-python
 WORKDIR /llama-cpp-python
 RUN . /build/venv/bin/activate && \
     pip3 install scikit-build && \

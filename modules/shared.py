@@ -9,8 +9,8 @@ from modules.logging_colors import logger
 generation_lock = None
 model = None
 tokenizer = None
+is_seq2seq = False
 model_name = "None"
-model_type = None
 lora_names = []
 
 # Chat variables
@@ -65,7 +65,7 @@ settings = {
     'chat_generation_attempts_max': 10,
     'default_extensions': [],
     'chat_default_extensions': ['gallery'],
-    'preset': 'LLaMA-Precise',
+    'preset': 'simple-1',
     'prompt': 'QA',
 }
 
@@ -96,6 +96,9 @@ parser.add_argument('--no-stream', action='store_true', help='Don\'t stream the 
 parser.add_argument('--settings', type=str, help='Load the default interface settings from this yaml file. See settings-template.yaml for an example. If you create a file called settings.yaml, this file will be loaded by default without the need to use the --settings flag.')
 parser.add_argument('--extensions', type=str, nargs="+", help='The list of extensions to load. If you want to load more than one extension, write the names separated by spaces.')
 parser.add_argument('--verbose', action='store_true', help='Print the prompts to the terminal.')
+
+# Model loader
+parser.add_argument('--loader', type=str, help='Choose the model loader manually, otherwise, it will get autodetected. Valid options: transformers, autogptq, gptq-for-llama, exllama, exllama_hf, llamacpp, rwkv, flexgen')
 
 # Accelerate/transformers
 parser.add_argument('--cpu', action='store_true', help='Use the CPU to generate text. Warning: Training on CPU is extremely slow.')
@@ -139,13 +142,19 @@ parser.add_argument('--warmup_autotune', action='store_true', help='(triton) Ena
 parser.add_argument('--fused_mlp', action='store_true', help='(triton) Enable fused mlp.')
 
 # AutoGPTQ
-parser.add_argument('--gptq-for-llama', action='store_true', help='Use GPTQ-for-LLaMa to load the GPTQ model instead of AutoGPTQ.')
+parser.add_argument('--gptq-for-llama', action='store_true', help='DEPRECATED')
 parser.add_argument('--autogptq', action='store_true', help='DEPRECATED')
 parser.add_argument('--triton', action='store_true', help='Use triton.')
+parser.add_argument('--no_inject_fused_attention', action='store_true', help='Do not use fused attention (lowers VRAM requirements).')
+parser.add_argument('--no_inject_fused_mlp', action='store_true', help='Triton mode only: Do not use fused MLP (lowers VRAM requirements).')
+parser.add_argument('--no_use_cuda_fp16', action='store_true', help='This can make models faster on some systems.')
 parser.add_argument('--desc_act', action='store_true', help='For models that don\'t have a quantize_config.json, this parameter is used to define whether to set desc_act or not in BaseQuantizeConfig.')
 
+# ExLlama
+parser.add_argument('--gpu-split', type=str, help="Comma-separated list of VRAM (in GB) to use per GPU device for model layers, e.g. 20,7,7")
+
 # FlexGen
-parser.add_argument('--flexgen', action='store_true', help='Enable the use of FlexGen offloading.')
+parser.add_argument('--flexgen', action='store_true', help='DEPRECATED')
 parser.add_argument('--percent', type=int, nargs="+", default=[0, 100, 100, 0, 100, 0], help='FlexGen: allocation percentages. Must be 6 numbers separated by spaces (default: 0, 100, 100, 0, 100, 0).')
 parser.add_argument("--compress-weight", action="store_true", help="FlexGen: activate weight compression.")
 parser.add_argument("--pin-weight", type=str2bool, nargs="?", const=True, default=True, help="FlexGen: whether to pin weights (setting this to False reduces CPU memory by 20%%).")
@@ -182,13 +191,40 @@ args_defaults = parser.parse_args([])
 
 # Deprecation warnings
 if args.autogptq:
-    logger.warning('--autogptq has been deprecated and will be removed soon. AutoGPTQ is now used by default for GPTQ models.')
+    logger.warning('--autogptq has been deprecated and will be removed soon. Use --loader autogptq instead.')
+    args.loader = 'autogptq'
+if args.gptq_for_llama:
+    logger.warning('--gptq-for-llama has been deprecated and will be removed soon. Use --loader gptq-for-llama instead.')
+    args.loader = 'gptq-for-llama'
+if args.flexgen:
+    logger.warning('--flexgen has been deprecated and will be removed soon. Use --loader flexgen instead.')
+    args.loader = 'FlexGen'
 
 # Security warnings
 if args.trust_remote_code:
     logger.warning("trust_remote_code is enabled. This is dangerous.")
 if args.share:
     logger.warning("The gradio \"share link\" feature uses a proprietary executable to create a reverse tunnel. Use it with care.")
+
+
+def fix_loader_name(name):
+    name = name.lower()
+    if name in ['llamacpp', 'llama.cpp', 'llama-cpp', 'llama cpp']:
+        return 'llama.cpp'
+    elif name in ['transformers', 'huggingface', 'hf', 'hugging_face', 'hugging face']:
+        return 'Transformers'
+    elif name in ['autogptq', 'auto-gptq', 'auto_gptq', 'auto gptq']:
+        return 'AutoGPTQ'
+    elif name in ['gptq-for-llama', 'gptqforllama', 'gptqllama', 'gptq for llama', 'gptq_for_llama']:
+        return 'GPTQ-for-LLaMa'
+    elif name in ['exllama', 'ex-llama', 'ex_llama', 'exlama']:
+        return 'ExLlama'
+    elif name in ['exllama-hf', 'exllama_hf', 'exllama hf', 'ex-llama-hf', 'ex_llama_hf']:
+        return 'ExLlama_HF'
+
+
+if args.loader is not None:
+    args.loader = fix_loader_name(args.loader)
 
 
 def add_extension(name):
