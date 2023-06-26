@@ -59,12 +59,12 @@ default_req_params = {
 
 # Optional, install the module and download the model to enable
 # v1/embeddings
-try:
-    from sentence_transformers import SentenceTransformer
-except ImportError:
-    pass
+#try:
+from sentence_transformers import SentenceTransformer
+# except ImportError:
+#     pass
 
-st_model = os.environ["OPENEDAI_EMBEDDING_MODEL"] if "OPENEDAI_EMBEDDING_MODEL" in os.environ else "all-mpnet-base-v2"
+st_model = os.environ["OPENEDAI_EMBEDDING_MODEL"] if "OPENEDAI_EMBEDDING_MODEL" in os.environ else "intfloat/e5-large-v2"
 embedding_model = None
 
 # little helper to get defaults if arg is present but None and should be the same type as default.
